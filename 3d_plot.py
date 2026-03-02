@@ -40,9 +40,11 @@ start_t = time.time()
 video_path = sys.argv[1]
 filename = os.path.basename(video_path)  # Returns "video_name.mp4"
 video_name = os.path.splitext(filename)[0] # Returns "video_name"
+capture_ratio = 1 # 1:1 One frame per Second
+plot_num = 10000
 
-# FFmpeg Command: Stream width and height of video to stdout
-probe_command = [
+# ffprobe Command: Stream width and height of video to stdout
+dimension_command = [
     'ffprobe', 
     '-v', 'error', 
     '-select_streams', 'v:0', 
@@ -50,32 +52,43 @@ probe_command = [
     '-of', 'csv=s=x:p=0', 
     video_path
 ]
-
-# Run it and capture the output (e.g., "1920x1080")
-result = subprocess.check_output(probe_command).decode('utf-8').strip()
-result = result.split('x')[:2]
-
-
-# Split the result into width and height
-width, height = map(int, result)
+dimension = subprocess.check_output(dimension_command).decode('utf-8').strip()
+dimension = dimension.split('x')[:2]
+width, height = map(int, dimension)
 
 print("INFO | Detected dimentions: ",width ," x ", height)
 bytes_per_frame = width * height * 3
 
-# FFmpeg Command: Stream raw rgb24 to stdout
+
+# ffprobe Command: Get duration of video in seconds
+duration_command = [
+    'ffprobe', 
+    '-v', 'error', 
+    '-show_entries', 'format=duration', 
+    '-of', 'csv=p=0', 
+    video_path
+]
+duration_s = float(subprocess.check_output(duration_command).decode('utf-8').strip())
+duration_s = int(duration_s)
+# Matplotlib Scatterplots start to overlap at >10000 plots, so we try to aim for this number
+if duration_s / plot_num > 1:
+    capture_ratio = int(duration_s/plot_num) # 1 frame per (duration/10000) seconds
+print(f"INFO | Detected duration: {duration_s} seconds.")
+print(f"INFO | Frames to Seconds Ratio: 1/{capture_ratio}" )
+print(f"INFO | # of Frames to Process: {duration_s/capture_ratio}" )
+
+
+# ffmpeg Command: Stream raw rgb24 to stdout
 main_command = [
     'ffmpeg',
     '-i', video_path,
-    '-vf', 'fps=1/6,format=rgb24', 
+    '-vf', f'fps=1/{capture_ratio},format=rgb24', 
     '-f', 'rawvideo',
     '-pix_fmt', 'rgb24',
     '-'
 ]
-
 process = subprocess.Popen(main_command, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-
 all_hsv_data = []
-
 
 try:
     print("INFO | Processing frames...")
