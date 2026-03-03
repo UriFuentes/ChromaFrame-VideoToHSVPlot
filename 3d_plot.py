@@ -4,20 +4,15 @@ import matplotlib.colors as mcolors
 import os, sys, subprocess, time
 
 
-# Loading a binary .npy file
-if sys.argv[1] == "load":
-    
-    data_path = sys.argv[2]
-    filename = os.path.basename(data_path)
-    plot_data = np.load(data_path) # Second argument is path
-    
+
+def plotData(data, filename):
     # Extract HSV data
-    hues = plot_data[:, 0]
-    sats = plot_data[:, 1]
-    vals = plot_data[:, 2]
+    hues = data[:, 0]
+    sats = data[:, 1]
+    vals = data[:, 2]
 
     # Convert back to RGB coloirs to display in plot
-    colors_rgb = mcolors.hsv_to_rgb(plot_data)
+    colors_rgb = mcolors.hsv_to_rgb(data)
 
     fig = plt.figure()
     ax = fig.add_subplot(projection="3d")
@@ -30,10 +25,17 @@ if sys.argv[1] == "load":
     ax.set_title(f"{filename} HSV Frames Path")
 
     plt.show()
+
+
+# Loading a binary .npy file
+if sys.argv[1] == "load":
+    data_path = sys.argv[2]
+    filename = os.path.basename(data_path)
+    plot_data = np.load(data_path) # Second argument is path
     
+    plotData(data_path, filename)
     print("Successfully loaded file.")
     exit()
-
 
 
 start_t = time.time()
@@ -75,7 +77,7 @@ if duration_s / plot_num > 1:
     capture_ratio = int(duration_s/plot_num) # 1 frame per (duration/10000) seconds
 print(f"INFO | Detected duration: {duration_s} seconds.")
 print(f"INFO | Frames to Seconds Ratio: 1/{capture_ratio}" )
-print(f"INFO | # of Frames to Process: {duration_s/capture_ratio}" )
+num_frames = int(duration_s/capture_ratio)
 
 
 # ffmpeg Command: Stream raw rgb24 to stdout
@@ -91,7 +93,7 @@ process = subprocess.Popen(main_command, stdout=subprocess.PIPE, stderr=subproce
 all_hsv_data = []
 
 try:
-    print("INFO | Processing frames...")
+    print(f"\nSTATUS | Processing {num_frames} frames...")
     while True:
         # Read one frame
         raw_frame = process.stdout.read(bytes_per_frame)
@@ -112,38 +114,22 @@ try:
         # To keep the data manageable for a plot, we can take the average of the frame
         avg_hsv = np.mean(frame_hsv, axis=(0, 1))
         all_hsv_data.append(avg_hsv)
-
 finally:
     process.terminate()
+    print("STATUS | Process completed.\n")
     
 # Convert data into np array
-plot_data = np.array(all_hsv_data)
-
-# Save binary data
-os.makedirs("data", exist_ok=True)
-np.save(f"data/{video_name}.npy", plot_data) #use np.load later    
+data = np.array(all_hsv_data)
 
 # Display time of execution
 elapsed_time_s = round(time.time() - start_t)
-print(f"Processed {len(plot_data)} frames in {elapsed_time_s} seconds.\nAvg Frames Processed per second: {len(plot_data)/elapsed_time_s}")
+print(f"INFO | Processed {num_frames} frames in {elapsed_time_s} seconds.\nINFO | Avg Frames Processed per second: {round(num_frames/elapsed_time_s, ndigits=2)}")
 
-# Extract HSV data
-hues = plot_data[:, 0]
-sats = plot_data[:, 1]
-vals = plot_data[:, 2]
+# Save binary data
+os.makedirs("data", exist_ok=True)
+np.save(f"data/{video_name}.npy", data) #use np.load later 
+print(f"INFO | Saved binary data as '{video_name}.npy'")
 
-# Convert back to RGB coloirs to display in plot
-colors_rgb = mcolors.hsv_to_rgb(plot_data)
-
-# Display Scatterplot
-fig = plt.figure()
-ax = fig.add_subplot(projection="3d")
-
-ax.scatter(hues, sats, vals, marker="s", c=colors_rgb, edgecolors='none')
-
-ax.set_xlabel("Hue")
-ax.set_ylabel("Saturation")
-ax.set_zlabel("Value")
-ax.set_title(f"{video_name} HSV Frames Path")
-
-plt.show()
+# Prompt Data Visualization
+if input("USER | Show scatterplot? (Y/n): ").lower()[0] == "y":
+    plotData(data, filename)
