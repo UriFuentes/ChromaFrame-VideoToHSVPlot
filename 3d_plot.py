@@ -1,30 +1,45 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import os, sys, subprocess, time
-
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 
 
 def plotData(data, filename):
-    # Extract HSV data
-    hues = data[:, 0]
-    sats = data[:, 1]
-    vals = data[:, 2]
+    # List containing [H, S, V]
+    colors_rgb = mcolors.hsv_to_rgb(data) 
+    
+    # Get HSV Decomposition
+    hue = data[:,0]
+    sat = data[:,1]
+    val = data[:,2]
 
-    # Convert back to RGB colors to display in plot
-    colors_rgb = mcolors.hsv_to_rgb(data)
+    fig = go.Figure()
 
-    fig = plt.figure()
-    ax = fig.add_subplot(projection="3d")
+    fig.add_trace(go.Scatter3d(
+        x=hue, # Hue
+        y=sat, # Saturation
+        z=val, # Value
+        mode='markers',
+        marker=dict(
+            size=5,
+            color=colors_rgb, 
+            opacity=1
+        )
+    ))
 
-    ax.scatter(hues, sats, vals, marker="s", c=colors_rgb, edgecolors='none')
-
-    ax.set_xlabel("Hue")
-    ax.set_ylabel("Saturation")
-    ax.set_zlabel("Value")
-    ax.set_title(f"{filename} HSV Frames Path")
-
-    plt.show()
+    fig.update_layout(
+        title=f"{filename} - HSV Color Space Mapping",
+        scene=dict(
+            xaxis_title='Hue',
+            yaxis_title='Saturation',
+            zaxis_title='Value'
+        )
+    )
+    
+    fig.show()
+    fig.update_xaxes(tickangle=90)
 
 
 # Loading a binary .npy file
@@ -33,7 +48,7 @@ if sys.argv[1] == "load":
     filename = os.path.basename(data_path)
     plot_data = np.load(data_path) # Second argument is path
     
-    plotData(data_path, filename)
+    plotData(plot_data, filename)
     print("Successfully loaded file.")
     exit()
 
