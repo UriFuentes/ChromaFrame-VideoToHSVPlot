@@ -11,7 +11,7 @@ def plotData(data, filename):
     sats = data[:, 1]
     vals = data[:, 2]
 
-    # Convert back to RGB coloirs to display in plot
+    # Convert back to RGB colors to display in plot
     colors_rgb = mcolors.hsv_to_rgb(data)
 
     fig = plt.figure()
