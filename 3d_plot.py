@@ -33,7 +33,7 @@ if sys.argv[1] == "load":
     filename = os.path.basename(data_path)
     plot_data = np.load(data_path) # Second argument is path
     
-    plotData(data_path, filename)
+    plotData(plot_data, filename)
     print("Successfully loaded file.")
     exit()
 
