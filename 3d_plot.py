@@ -4,6 +4,8 @@ import os, sys, subprocess, time
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
 
 
 def plotData(data, filename):
@@ -14,20 +16,55 @@ def plotData(data, filename):
     hue = data[:,0]
     sat = data[:,1]
     val = data[:,2]
+    
+    # Calculate average HSV Values
+    hue_avg = sum(hue) / len(hue)
+    sat_avg = sum(sat) / len(sat)
+    val_avg = sum(val) / len(val)
+    
+    
+    # Set up plot grid
+    fig = make_subplots(
+        rows=1, cols=3,
+        specs=[[
+            {"type": "scene", "colspan": 2}, # Cell 1: 3D scene spanning 2 columns
+            None,                            # Cell 2: Ignored (covered by span)
+            {"type": "xy"}                   # Cell 3: Standard 2D plot
+        ]]
+    )
 
-    fig = go.Figure()
-
+    # Main Scatterplot
     fig.add_trace(go.Scatter3d(
+        name="hsv-scatterplot",
         x=hue, # Hue
         y=sat, # Saturation
         z=val, # Value
+        hovertemplate="Hue: %{x}<br>Sat: %{y}<br>Val: %{z}",
         mode='markers',
         marker=dict(
-            size=5,
+            size=3,
             color=colors_rgb, 
-            opacity=1
-        )
-    ))
+            opacity=1,
+            symbol="square",
+        )),
+        row=1, col=1 # These are like coordinates for the trace's placement
+    )
+    
+    # Averages Colors
+    
+    
+    # Averages subplot
+    fig.add_trace(go.Bar(
+        name="avg-bar",
+        x=['Hue', 'Saturation', 'Value'],
+        y=[hue_avg, sat_avg, val_avg],
+        marker=dict(
+            color=['red', 'blue', 'green'], 
+            opacity=1,
+        )),
+        row=1, col=3
+    )
+
 
     fig.update_layout(
         title=f"{filename} - HSV Color Space Mapping",
@@ -35,21 +72,35 @@ def plotData(data, filename):
             xaxis_title='Hue',
             yaxis_title='Saturation',
             zaxis_title='Value'
+        ),
+        yaxis=dict(
+            range=[0,1]
         )
     )
     
+    # fig.update_traces(
+    #     selector=dict(name="hsv-scatterplot"),
+    #     xaxis=dict(
+    #         range=[0,1]
+    #     ),
+    #     yaxis=dict(
+    #         range=[0,1]
+    #     )
+    # )
+    
     fig.show()
-    fig.update_xaxes(tickangle=90)
 
 
 # Loading a binary .npy file
 if sys.argv[1] == "load":
+    print("STATUS | Loadig file...")
+    
     data_path = sys.argv[2]
     filename = os.path.basename(data_path)
     plot_data = np.load(data_path) # Second argument is path
     
     plotData(plot_data, filename)
-    print("Successfully loaded file.")
+    print("STATUS | Successfully loaded file.")
     exit()
 
 
