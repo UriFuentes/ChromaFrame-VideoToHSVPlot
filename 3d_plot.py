@@ -9,10 +9,9 @@ from plotly.subplots import make_subplots
 
 
 def plotData(data, filename):
+    #-------- Preparing Data --------#
     # List containing [H, S, V]
     colors_rgb = mcolors.hsv_to_rgb(data) 
-    
-    print(len(data))
     
     # Get HSV Decomposition
     hue = data[:,0]
@@ -24,8 +23,7 @@ def plotData(data, filename):
     sat_avg = sum(sat) / len(sat)
     val_avg = sum(val) / len(val)
     
-    
-    # Set up plot grid
+    #-------- Subplots grid --------#
     fig = make_subplots(
         rows=2, cols=3,
         specs=[
@@ -38,8 +36,53 @@ def plotData(data, filename):
     fig.update_layout(
         title=f"{filename} - HSV Decomposition",
     )
+    
+    #-------- Sliders --------#
+    
+    # Index Slider 
+    N = len(hue) 
+    num_steps = 100
+    indices = np.linspace(0, N, num_steps + 1, dtype=int)
+    idx_steps = []
 
-    # Main Scatterplot
+    for i in range(len(indices) - 1):
+        
+        print(i)
+        
+        start_idx = indices[i]
+        end_idx = indices[i+1]
+        
+        # Create a slice of the data
+        # Change this to mask = slice(0, end_idx) if you want it to "grow" 
+        # instead of showing segments
+        h_slice = hue[start_idx:end_idx]
+        s_slice = sat[start_idx:end_idx]
+        v_slice = val[start_idx:end_idx]
+        c_slice = np.array(colors_rgb)[start_idx:end_idx]
+        
+        step = dict(
+            method="restyle",
+            args=[{
+                "x": [h_slice],
+                "y": [s_slice],
+                "z": [v_slice],
+                "marker.color": [c_slice]
+            }, [0]], # Still targeting index 0 (the Scatter3d)
+            label=f"{start_idx}-{end_idx}"
+        )
+        idx_steps.append(step)
+
+    # Add to your slider list
+    idx_slider = dict(
+        active=0,
+        currentvalue={"prefix": "Data Range: "},
+        pad={"t": 50},
+        steps=idx_steps,
+        y=-0.6 # Position it below your H, S, and V sliders
+    )
+    
+
+    #-------- Scatterplot Trace --------#
     fig.add_trace(go.Scatter3d(
         name="hsv-scatterplot",
         x=hue, # Hue
@@ -62,8 +105,12 @@ def plotData(data, filename):
         zaxis=dict(range=[0, 1], title="Value"),
         row=1, col=1
     )
+
+    # Load Sliders
+    fig.update_layout(sliders=[idx_slider], title="HSV 3D Filter")
     
     
+    #-------- Barchart Trace --------#
     # Averages Colors
     hue_clr = f'hsl({hue_avg*360}, 50%, 50%)'
     sat_clr = f'hsl(360, {sat_avg * 100}%, 50%)'
@@ -85,6 +132,11 @@ def plotData(data, filename):
         range=[0,1],
         row=1, col=3
     )
+    
+    # # This doesnt work for some reason
+    # if input("USER | Save html view? (Y/n): ").lower() == "y":
+    #     os.makedirs("view", exist_ok=True)
+    #     fig.write_html(f"view/{filename}.html")
 
     
     fig.show()
