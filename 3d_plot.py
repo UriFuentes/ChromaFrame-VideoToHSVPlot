@@ -142,12 +142,12 @@ def plotData(data, filename):
     )
 
     # Load Sliders
-    fig.update_layout(sliders=[idx_slider], title="HSV 3D Filter")
+    fig.update_layout(sliders=[idx_slider])
     
     fig.update_scenes(
-        xaxis=dict(range=[0, 1], title="Hue"),
-        yaxis=dict(range=[0, 1], title="Saturation"),
-        zaxis=dict(range=[0, 1], title="Value"),
+        xaxis=dict(range=[0, 1], dtick=0.1, title="Hue"),
+        yaxis=dict(range=[0, 1], dtick=0.1, title="Saturation"),
+        zaxis=dict(range=[0, 1], dtick=0.1, title="Value"),
         aspectmode='cube',
         row=1, col=1
     )
