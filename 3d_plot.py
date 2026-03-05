@@ -12,6 +12,8 @@ def plotData(data, filename):
     # List containing [H, S, V]
     colors_rgb = mcolors.hsv_to_rgb(data) 
     
+    print(len(data))
+    
     # Get HSV Decomposition
     hue = data[:,0]
     sat = data[:,1]
@@ -105,7 +107,8 @@ start_t = time.time()
 video_path = sys.argv[1]
 filename = os.path.basename(video_path)  # Returns "video_name.mp4"
 video_name = os.path.splitext(filename)[0] # Returns "video_name"
-capture_ratio = 1 # 1:1 One frame per Second
+f_ratio = 1 # Frames ratio
+s_ratio = 1 # Seconds ratio
 plot_num = 10000
 
 # ffprobe Command: Stream width and height of video to stdout
@@ -135,19 +138,24 @@ duration_command = [
 ]
 duration_s = float(subprocess.check_output(duration_command).decode('utf-8').strip())
 duration_s = int(duration_s)
-# Matplotlib Scatterplots start to overlap at >10000 plots, so we try to aim for this number
+
+# This logic exists to enure that the number of frames processed is as close to plot_num as possible
 if duration_s / plot_num > 1:
-    capture_ratio = int(duration_s/plot_num) # 1 frame per (duration/10000) seconds
+    s_ratio = int(duration_s/plot_num) # (duration/plot_num) seconds per frame
+    num_frames = int(duration_s/s_ratio)
+else:
+    f_ratio =  int(plot_num/duration_s) # (plot_num/duration) frames per second
+    num_frames = int(duration_s*f_ratio)
+
 print(f"INFO | Detected duration: {duration_s} seconds.")
-print(f"INFO | Frames to Seconds Ratio: 1/{capture_ratio}" )
-num_frames = int(duration_s/capture_ratio)
+print(f"INFO | Frames to Seconds Ratio: {f_ratio}/{s_ratio}" )
 
 
 # ffmpeg Command: Stream raw rgb24 to stdout
 main_command = [
     'ffmpeg',
     '-i', video_path,
-    '-vf', f'fps=1/{capture_ratio},format=rgb24', 
+    '-vf', f'fps={f_ratio}/{s_ratio},format=rgb24', 
     '-f', 'rawvideo',
     '-pix_fmt', 'rgb24',
     '-'
