@@ -28,7 +28,7 @@ def plotData(data, filename):
         rows=2, cols=3,
         specs=[
             [{"type": "scene", "colspan": 2, "rowspan": 2}, None, {"type": "xy"}], # Row 1
-            [None,                                        None,             {"type": "scene"}]  # Row 2
+            [None,                                        None,   {"type": "scene"}]  # Row 2
         ],
         subplot_titles=("3D HSV Space", "Average HSV Values", "3D HSV Space (Ranged)")
     )
@@ -46,6 +46,7 @@ def plotData(data, filename):
     idx_steps = []
     
     base_color = colors_rgb
+    base_size = [10] * N
 
     for i in range(len(indices) - 1):
         start_idx = indices[i]
@@ -55,6 +56,9 @@ def plotData(data, filename):
         
         # Make it so the ones loaded in that are highlighted/ bigger
         
+        size_slice = base_size[0:end_idx]
+        size_slice[start_idx:end_idx] = [15] * (end_idx-start_idx)
+        
         step = dict(
             method="restyle",
             args=[{
@@ -62,6 +66,7 @@ def plotData(data, filename):
                 "y": [sat[0:end_idx]],
                 "z": [val[0:end_idx]],
                 "marker.color": [color_slice],
+                "marker.size": [size_slice]
             }, [1]], # Targeting index 1 (Active Plot)
             label=f"{start_idx}-{end_idx}"
         )
@@ -86,7 +91,8 @@ def plotData(data, filename):
         marker=dict(
             size=3, 
             color='lightgrey', 
-            opacity=0.3  # Constant low opacity
+            opacity=0.3,  # low opacity
+            symbol="square"
         ),
         showlegend=False,
         hoverinfo='skip' # Don't let background points clutter hovers
@@ -98,10 +104,13 @@ def plotData(data, filename):
         x=hue, y=sat, z=val,
         mode='markers',
         marker=dict(
-            size=3, 
+            # size=3, 
             color=colors_rgb, 
-            opacity=1.0, # Constant full opacity
-            symbol="square"
+            opacity=1.0, # Full opacity
+            symbol="square",
+            line=dict(
+                width=0
+            )
         ),
         name="Active Range"
     ), row=1, col=1)
