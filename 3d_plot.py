@@ -45,19 +45,23 @@ def plotData(data, filename):
     indices = np.linspace(0, N, num_steps + 1, dtype=int)
     idx_steps = []
     
-    base_color = colors_rgb
-    base_size = [10] * N
-
     for i in range(len(indices) - 1):
         start_idx = indices[i]
         end_idx = indices[i+1]
+
+        # current_colors = list(colors_rgb[0:end_idx]) 
         
-        color_slice = base_color[0:end_idx]
-        
-        # Make it so the ones loaded in that are highlighted/ bigger
-        
-        size_slice = base_size[0:end_idx]
-        size_slice[start_idx:end_idx] = [15] * (end_idx-start_idx)
+        # Marker Line (border) logic
+        line_width = [0] * end_idx
+        line_width[start_idx:end_idx] = [2] * (end_idx - start_idx)
+
+        # Marker line color logic (using a copy here too)
+        line_color_slice = list(colors_rgb[0:end_idx]) 
+        line_color_slice[start_idx:end_idx] = [[1.0, 1.0, 1.0]] * (end_idx - start_idx)
+
+        # Marker size logic
+        size_slice = [6] * end_idx
+        size_slice[start_idx:end_idx] = [14] * (end_idx - start_idx)
         
         step = dict(
             method="restyle",
@@ -65,13 +69,31 @@ def plotData(data, filename):
                 "x": [hue[0:end_idx]],
                 "y": [sat[0:end_idx]],
                 "z": [val[0:end_idx]],
-                "marker.color": [color_slice],
-                "marker.size": [size_slice]
-            }, [1]], # Targeting index 1 (Active Plot)
+                # Use the original colors for the markers
+                "marker.color": [colors_rgb[0:end_idx]], 
+                "marker.size": [size_slice],
+                "marker.line.width": [line_width],
+                "marker.line.color": [line_color_slice],
+            }, [1]],
             label=f"{start_idx}-{end_idx}"
         )
         idx_steps.append(step)
-
+        
+    full_view_step = dict(
+    method="restyle",
+    args=[{
+        "x": [hue],
+        "y": [sat],
+        "z": [val],
+        "marker.color": [colors_rgb],
+        "marker.size": [[6] * N],
+        "marker.line.width": [[0] * N],
+        "marker.line.color": [colors_rgb] # Reset lines to match markers
+    }, [1]], 
+    label="Show All"
+    )
+    idx_steps.append(full_view_step)
+        
     # Add to your slider list
     idx_slider = dict(
         active=0,
@@ -108,9 +130,6 @@ def plotData(data, filename):
             color=colors_rgb, 
             opacity=1.0, # Full opacity
             symbol="square",
-            line=dict(
-                width=0
-            )
         ),
         name="Active Range"
     ), row=1, col=1)
