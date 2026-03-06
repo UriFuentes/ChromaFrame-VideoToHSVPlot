@@ -28,9 +28,9 @@ def plotData(data, filename):
         rows=2, cols=3,
         specs=[
             [{"type": "scene", "colspan": 2, "rowspan": 2}, None, {"type": "xy"}], # Row 1
-            [None,                                        None,             None]  # Row 2
+            [None,                                        None,             {"type": "scene"}]  # Row 2
         ],
-        subplot_titles=("3D HSV Space", "Average HSV Values", "Another Plot")
+        subplot_titles=("3D HSV Space", "Average HSV Values", "3D HSV Space (Ranged)")
     )
 
     fig.update_layout(
@@ -51,14 +51,16 @@ def plotData(data, filename):
         start_idx = indices[i]
         end_idx = indices[i+1]
         
-        color_slice = base_color[start_idx:end_idx]
+        color_slice = base_color[0:end_idx]
+        
+        # Make it so the ones loaded in that are highlighted/ bigger
         
         step = dict(
             method="restyle",
             args=[{
-                "x": [hue[start_idx:end_idx]],
-                "y": [sat[start_idx:end_idx]],
-                "z": [val[start_idx:end_idx]],
+                "x": [hue[0:end_idx]],
+                "y": [sat[0:end_idx]],
+                "z": [val[0:end_idx]],
                 "marker.color": [color_slice],
             }, [1]], # Targeting index 1 (Active Plot)
             label=f"{start_idx}-{end_idx}"
@@ -75,9 +77,9 @@ def plotData(data, filename):
     )
     
 
-    #-------- Scatterplot Trace --------#
+    #-------- Scatterplot Traces --------#
     
-    # Trace 0: The "Ghost" Background
+    # Trace 0: Grey Background Plots
     fig.add_trace(go.Scatter3d(
         x=hue, y=sat, z=val,
         mode='markers',
@@ -91,7 +93,7 @@ def plotData(data, filename):
     ), row=1, col=1)
     
     
-    # Trace 1: The "Active" Highlight
+    # Trace 1: Active Selected Plots
     fig.add_trace(go.Scatter3d(
         x=hue, y=sat, z=val,
         mode='markers',
