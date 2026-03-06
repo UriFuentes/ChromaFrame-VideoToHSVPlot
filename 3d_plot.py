@@ -11,7 +11,7 @@ from plotly.subplots import make_subplots
 def plotData(data, filename):
     #-------- Preparing Data --------#
     # List containing [H, S, V]
-    colors_rgb = mcolors.hsv_to_rgb(data) 
+    colors_rgb = mcolors.hsv_to_rgb(data)
     
     # Get HSV Decomposition
     hue = data[:,0]
@@ -44,30 +44,23 @@ def plotData(data, filename):
     num_steps = 100
     indices = np.linspace(0, N, num_steps + 1, dtype=int)
     idx_steps = []
+    
+    base_color = colors_rgb
 
     for i in range(len(indices) - 1):
-        
-        print(i)
-        
         start_idx = indices[i]
         end_idx = indices[i+1]
         
-        # Create a slice of the data
-        # Change this to mask = slice(0, end_idx) if you want it to "grow" 
-        # instead of showing segments
-        h_slice = hue[start_idx:end_idx]
-        s_slice = sat[start_idx:end_idx]
-        v_slice = val[start_idx:end_idx]
-        c_slice = np.array(colors_rgb)[start_idx:end_idx]
+        color_slice = base_color[start_idx:end_idx]
         
         step = dict(
             method="restyle",
             args=[{
-                "x": [h_slice],
-                "y": [s_slice],
-                "z": [v_slice],
-                "marker.color": [c_slice]
-            }, [0]], # Still targeting index 0 (the Scatter3d)
+                "x": [hue[start_idx:end_idx]],
+                "y": [sat[start_idx:end_idx]],
+                "z": [val[start_idx:end_idx]],
+                "marker.color": [color_slice],
+            }, [1]], # Targeting index 1 (Active Plot)
             label=f"{start_idx}-{end_idx}"
         )
         idx_steps.append(step)
@@ -81,65 +74,52 @@ def plotData(data, filename):
         y=0 # Position it below your H, S, and V sliders
     )
     
-    # # Index Slider: Shows only the plots within a index range
-    # N = len(hue) 
-    # num_steps = 100
-    # indices = np.linspace(0, N, num_steps + 1, dtype=int)
-    # idx_steps = []
-
-    # for i in range(len(indices) - 1):
-        
-    #     print(i)
-        
-    #     start_idx = indices[i]
-    #     end_idx = indices[i+1]
-        
-    #     # Create a slice of the data
-    #     # Change this to mask = slice(0, end_idx) if you want it to "grow" 
-    #     # instead of showing segments
-    #     h_slice = hue[start_idx:end_idx]
-    #     s_slice = sat[start_idx:end_idx]
-    #     v_slice = val[start_idx:end_idx]
-    #     c_slice = np.array(colors_rgb)[start_idx:end_idx]
-        
-    #     step = dict(
-    #         method="restyle",
-    #         args=[{
-    #             "x": [h_slice],
-    #             "y": [s_slice],
-    #             "z": [v_slice],
-    #             "marker.color": [c_slice]
-    #         }, [0]], # Still targeting index 0 (the Scatter3d)
-    #         label=f"{start_idx}-{end_idx}"
-    #     )
-    #     idx_steps.append(step)
-
-    # # Add to your slider list
-    # idx_slider = dict(
-    #     active=0,
-    #     currentvalue={"prefix": "Data Range: "},
-    #     pad={"t": 50},
-    #     steps=idx_steps,
-    #     y=-0.6 # Position it below your H, S, and V sliders
-    # )
-    
 
     #-------- Scatterplot Trace --------#
+    
+    # Trace 0: The "Ghost" Background
     fig.add_trace(go.Scatter3d(
-        name="hsv-scatterplot",
-        x=hue, # Hue
-        y=sat, # Saturation
-        z=val, # Value
-        hovertemplate="Hue: %{x}<br>Sat: %{y}<br>Val: %{z}",
+        x=hue, y=sat, z=val,
         mode='markers',
         marker=dict(
-            size=3,
+            size=3, 
+            color='lightgrey', 
+            opacity=0.3  # Constant low opacity
+        ),
+        showlegend=False,
+        hoverinfo='skip' # Don't let background points clutter hovers
+    ), row=1, col=1)
+    
+    
+    # Trace 1: The "Active" Highlight
+    fig.add_trace(go.Scatter3d(
+        x=hue, y=sat, z=val,
+        mode='markers',
+        marker=dict(
+            size=3, 
             color=colors_rgb, 
-            opacity=1,
-            symbol="square",
-        )),
-        row=1, col=1 # These are like coordinates for the trace's placement
-    )
+            opacity=1.0, # Constant full opacity
+            symbol="square"
+        ),
+        name="Active Range"
+    ), row=1, col=1)
+    
+    # Original Trace
+    # fig.add_trace(go.Scatter3d(
+    #     name="hsv-scatterplot",
+    #     x=hue, # Hue
+    #     y=sat, # Saturation
+    #     z=val, # Value
+    #     hovertemplate="Hue: %{x}<br>Sat: %{y}<br>Val: %{z}",
+    #     mode='markers',
+    #     marker=dict(
+    #         size=3,
+    #         color=colors_rgb, 
+    #         opacity=[1.0] * N,
+    #         symbol="square",
+    #     )),
+    #     row=1, col=1 # These are like coordinates for the trace's placement
+    # )
 
     # Load Sliders
     fig.update_layout(sliders=[idx_slider])
